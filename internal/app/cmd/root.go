@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
+	"time"
 )
 
 var (
@@ -72,13 +73,15 @@ func runTraverseCommand(cmd *cobra.Command, args []string) {
 
 	log.Infof("Using %s as base domain for all relative links", crawlerConfig.WikiBaseDomain)
 
+	start := time.Now()
 	if res, err := crawler.SearchShortestPath(); err != nil {
 		log.
 			WithError(err).
 			Error("Failed to resolve shortest path")
 		os.Exit(2)
 	} else {
-		log.Info("Resolved path")
+		duration := time.Since(start)
+		log.Infof("Resolved path in %d ms", duration.Milliseconds())
 		for _, visitedPage := range res.VisitedPages() {
 			log.Info(visitedPage)
 		}
