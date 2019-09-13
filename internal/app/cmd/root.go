@@ -25,8 +25,7 @@ import (
 )
 
 var (
-	crawlerConfig = config.CrawlerConfig{}
-	rootCmd       = &cobra.Command{
+	rootCmd = &cobra.Command{
 		Use:   "shortest-path",
 		Args:  cobra.ExactArgs(2),
 		Short: "",
@@ -59,19 +58,14 @@ func initLogging() {
 }
 
 func initConfig() {
-
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		log.WithError(err).Error("failed to bind flags to viper")
 	}
-
-	crawlerConfig.Parse()
 }
 
 func runTraverseCommand(cmd *cobra.Command, args []string) {
 
 	crawler := crawling.NewWikiCrawler(args[0], args[1], uint16(viper.GetInt("max-hops")))
-
-	log.Infof("Using %s as base domain for all relative links", crawlerConfig.WikiBaseDomain)
 
 	start := time.Now()
 	if res, err := crawler.SearchShortestPath(); err != nil {
