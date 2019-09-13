@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"github.com/baez90/shortest-path/internal/app/config"
 	"github.com/baez90/shortest-path/internal/app/crawling"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

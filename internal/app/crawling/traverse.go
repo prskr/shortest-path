@@ -114,7 +114,12 @@ func (crawler *WikiCrawler) processState(state *TraversalState) (traversalResult
 		case html.StartTagToken:
 			if token := tokenizer.Token(); token.Data == "a" {
 				for _, attr := range token.Attr {
-					if attr.Key == "href" && strings.HasPrefix(attr.Val, "/wiki/") && !crawler.alreadyVisitedPages.Contains(attr.Val) && !specialWikiLinkRegex.MatchString(attr.Val) {
+					if requireAll(
+						attr.Key == "href",
+						strings.HasPrefix(attr.Val, "/wiki/"),
+						!crawler.alreadyVisitedPages.Contains(attr.Val),
+						!specialWikiLinkRegex.MatchString(attr.Val),
+					) {
 						logger.Debugf("Enqueuing discovered link %s", attr.Val)
 						crawler.alreadyVisitedPages.Add(attr.Val)
 						ancestor := &TraversalState{
@@ -133,5 +138,17 @@ func (crawler *WikiCrawler) processState(state *TraversalState) (traversalResult
 			}
 		}
 	}
+}
 
+func requireAll(booleans ...bool) bool {
+	result := true
+
+	for _, b := range booleans {
+		result = result && b
+		if !result {
+			return result
+		}
+	}
+
+	return result
 }
