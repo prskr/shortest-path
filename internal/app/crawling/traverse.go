@@ -17,15 +17,12 @@ package crawling
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/html"
 	"net/http"
 	"regexp"
-	"strings"
 )
 
 var (
-	baseDomainRegex      = regexp.MustCompile(`^http(s)?://[A-z]+\.wikipedia.org`)
-	specialWikiLinkRegex = regexp.MustCompile("/wiki/[A-z]+:.*")
+	baseDomainRegex = regexp.MustCompile(`^http(s)?://[A-z]+\.wikipedia.org`)
 )
 
 func NewWikiCrawler(startPage string, targetPath string, maxHops uint16) *WikiCrawler {
@@ -103,52 +100,31 @@ func (crawler *WikiCrawler) processState(state *TraversalState) (traversalResult
 		return
 	}
 
-	tokenizer := html.NewTokenizer(resp.Body)
-
 	logger.Debug("Parsing retrieved HTML page")
 
-	for {
-		switch tokenizer.Next() {
-		case html.ErrorToken:
+	var discoveredLinks []string
+	discoveredLinks, err = extractLinksFromContent(resp.Body, crawler.alreadyVisitedPages, func(s string) string {
+		return fmt.Sprintf("%s%s", crawler.wikiBaseDomain, s)
+	})
+
+	if err != nil {
+		logger.WithError(err).Errorf("Failed to process page %s", state.PageURI)
+		return
+	}
+
+	for _, link := range discoveredLinks {
+		ancestor := &TraversalState{
+			PageURI:     link,
+			Predecessor: state,
+		}
+
+		if link == crawler.targetPage {
+			traversalResult.successState = ancestor
 			return
-		case html.StartTagToken:
-			if token := tokenizer.Token(); token.Data == "a" {
-				for _, attr := range token.Attr {
-					if requireAll(
-						attr.Key == "href",
-						strings.HasPrefix(attr.Val, "/wiki/"),
-						!crawler.alreadyVisitedPages.Contains(attr.Val),
-						!specialWikiLinkRegex.MatchString(attr.Val),
-					) {
-						logger.Debugf("Enqueuing discovered link %s", attr.Val)
-						crawler.alreadyVisitedPages.Add(attr.Val)
-						ancestor := &TraversalState{
-							PageURI:     fmt.Sprintf("%s%s", crawler.wikiBaseDomain, attr.Val),
-							Predecessor: state,
-						}
-
-						if ancestor.PageURI == crawler.targetPage {
-							traversalResult.successState = ancestor
-							return
-						}
-
-						state.Ancestors = append(state.Ancestors, ancestor)
-					}
-				}
-			}
 		}
-	}
-}
 
-func requireAll(booleans ...bool) bool {
-	result := true
-
-	for _, b := range booleans {
-		result = result && b
-		if !result {
-			return result
-		}
+		state.Ancestors = append(state.Ancestors, ancestor)
 	}
 
-	return result
+	return
 }

@@ -37,7 +37,7 @@ func Test_processState(t *testing.T) {
 					Predecessor: nil,
 				},
 			},
-			wantResultsCount: 352,
+			wantResultsCount: 334,
 		},
 		{
 			name: "Test to fetch image link",
@@ -48,7 +48,7 @@ func Test_processState(t *testing.T) {
 					Predecessor: nil,
 				},
 			},
-			wantResultsCount: 3,
+			wantResultsCount: 2,
 		},
 	}
 

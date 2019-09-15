@@ -60,6 +60,12 @@ func initConfig() {
 	if err := viper.BindPFlags(rootCmd.PersistentFlags()); err != nil {
 		log.WithError(err).Error("failed to bind flags to viper")
 	}
+
+	if level, err := log.ParseLevel(viper.GetString("log-level")); err != nil {
+		log.WithError(err).Error("failed to parse log level")
+	} else {
+		log.SetLevel(level)
+	}
 }
 
 func runTraverseCommand(cmd *cobra.Command, args []string) {
